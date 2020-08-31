@@ -1,21 +1,26 @@
 ﻿using System;
 using System.Net;
+using System.IO;
+using System.Xml;
 
 namespace WebbserverProject
 {
     class Program
-    {        
+    {
         static void Main(string[] args)
         {
+
             string[] prefixes = { "http://localhost:8080/" };
 
             SimpleListenerExample(prefixes);
-            
+
+
         }
 
         // This example requires the System and System.Net namespaces.
         public static void SimpleListenerExample(string[] prefixes)
         {
+
             if (!HttpListener.IsSupported)
             {
                 Console.WriteLine("Windows XP SP2 or Server 2003 is required to use the HttpListener class.");
@@ -37,25 +42,41 @@ namespace WebbserverProject
             }
             listener.Start();
             Console.WriteLine("Listening...");
+            while (true)
+            {
 
-            // Note: The GetContext method blocks while waiting for a request.
-            HttpListenerContext context = listener.GetContext();
-            HttpListenerRequest request = context.Request;
+                // Note: The GetContext method blocks while waiting for a request.
+                HttpListenerContext context = listener.GetContext();
+                HttpListenerRequest request = context.Request;
 
-            // Obtain a response object.
-            HttpListenerResponse response = context.Response;
+                // Obtain a response object.
+                HttpListenerResponse response = context.Response;
 
-            // Construct a response.
-            string responseString = "<HTML><BODY> Hello world!</BODY></HTML>";
-            byte[] buffer = System.Text.Encoding.UTF8.GetBytes(responseString);
+                string responseString;
+                // Construct a response.
+                try
+                {
+                    if (request.RawUrl.Contains(".gif"))
+                    {
+                        response.AddHeader("ContentType", "image/gif");
+                    }
+                    responseString = File.ReadAllText(@"D:\skola\molöntjänster\webserver2-grupp1\Content\" + request.RawUrl);
+                }
+                catch (Exception)
+                {
+                    continue;
+                }
+                byte[] buffer = System.Text.Encoding.UTF8.GetBytes(responseString);
 
-            // Get a response stream and write the response to it.
-            response.ContentLength64 = buffer.Length;
-            System.IO.Stream output = response.OutputStream;
-            output.Write(buffer, 0, buffer.Length);
+                // Get a response stream and write the response to it.
+                response.ContentLength64 = buffer.Length;
+                System.IO.Stream output = response.OutputStream;
+                output.Write(buffer, 0, buffer.Length);
 
-            // You must close the output stream.
-            output.Close();
+                // You must close the output stream.
+                output.Close();
+                Console.WriteLine($"raw url{request.RawUrl}");
+            }
             listener.Stop();
         }
     }
